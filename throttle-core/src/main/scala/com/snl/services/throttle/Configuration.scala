@@ -12,11 +12,6 @@ import com.typesafe.config._
 class Configuration ( config: Config ) extends Extension {
 
   /**
-   * The implicit ask timeout
-   */
-  implicit val askTimeout = Configuration.getDuration( config, "snl.askTimeout")
-
-  /**
    * The name of the application
    */
   val appName = "SNL Throttling Service v1"
