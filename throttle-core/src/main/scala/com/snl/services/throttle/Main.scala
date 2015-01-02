@@ -65,7 +65,7 @@ class Main extends Actor {
 	    streamingContext,
 	    Map( 
 	        "zookeeper.connect"-> config.kafkaZookeeperConnect,
-	        "group.id" -> config.appName
+	        "group.id" -> config.appName 
 	    ),
 	    Map( 
 	        config.requestsTopic -> config.requestsTopicThreadsPerReceiver
