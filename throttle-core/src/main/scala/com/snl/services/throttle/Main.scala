@@ -61,7 +61,7 @@ class Main extends Actor {
 	// create the input stream of requests from kafka. note that we have configured write-ahead to be enabled in the 
 	// spark configuration above, to achieve exactly once semantics, and have disabled replication for this stream
 	// per the recommendation in the docs, see https://spark.apache.org/docs/latest/streaming-programming-guide.html#fault-tolerance-semantics
-	val requests = streamingContext.union(( 1 to config.requestsTopicReceiverCount).map( i => KafkaUtils.createStream( 
+	val rawRequests = streamingContext.union(( 1 to config.requestsTopicReceiverCount).map( i => KafkaUtils.createStream( 
 	    streamingContext,
 	    Map( 
 	        "zookeeper.connect"-> config.kafkaZookeeperConnect,
@@ -71,6 +71,9 @@ class Main extends Actor {
 	        config.requestsTopic -> config.requestsTopicThreadsPerReceiver
 	    ),
 	    StorageLevel.MEMORY_AND_DISK_SER)))
+	    
+	// parse the requests
+	val requests = rawRequests
     
 	// kick off the processing
 	self ! Main.StartMessage
