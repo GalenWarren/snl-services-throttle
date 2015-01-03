@@ -21,8 +21,8 @@ import com.snl.services.throttle.CouchbaseRequestStateWriter._
  * TODOS:
  * 1) figure out how to exclude spark from jar file
  * 2) handle errors in bucket upsert, fail agent and force restart?
- * 3) restrict window based on time of batch
- * 4) put back expiry
+ * 3) deal with issue of colons in incoming keys, flip?
+ * 4) make it run on yarn
  */
 class Main extends Configured with Logging {
 

@@ -5,6 +5,7 @@ import scala.util.control._
 
 import com.couchbase.client.java._
 import com.couchbase.client.java.document._
+import com.couchbase.client.java.document.json._
 import rx.lang.scala._
 import rx.lang.scala.JavaConversions._
 import grizzled.slf4j._
@@ -51,10 +52,13 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
     // access the cluster
     val bucket = getBucket( config )
     
-    // either delete or upsert depending on the count ...
+    // generate the bucket key
+    val bucketKey = List( key, config.site ).mkString(":")
+    
+    // either delete or upsert depending on the count. if we insert, give it an expiry of 2x the trailing interval
 	val observable : Observable[JsonDocument] = count match {
-      case 0 => bucket.remove( key )
-      case _ => bucket.upsert( RequestState( key, config.site, count ).toJsonDocument(config))
+      case 0 => bucket.remove( bucketKey )
+      case _ => bucket.upsert(JsonDocument.create( bucketKey, JsonObject.empty().put( "count", count ), config.requestsWindowInterval.toSeconds ))
     }
     
     // subscribe to results
@@ -63,7 +67,6 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
         logger.error( "Failed to store document for key %s: %s".format( key, t.getMessage()))
       }
     })
-    
     
   }
   
