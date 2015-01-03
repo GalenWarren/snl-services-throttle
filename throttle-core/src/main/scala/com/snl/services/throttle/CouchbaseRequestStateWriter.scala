@@ -53,7 +53,7 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
     val bucket = getBucket( config )
     
     // generate the bucket key
-    val bucketKey = List( key, config.site ).mkString(":")
+    val bucketKey = List( config.site, key ).mkString(":")
     
     // either delete or upsert depending on the count. if we insert, give it an expiry of 2x the trailing interval
 	val observable : Observable[JsonDocument] = count match {

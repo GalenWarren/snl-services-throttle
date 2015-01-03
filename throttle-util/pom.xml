@@ -1,13 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.snl.services</groupId>
-  <artifactId>throttle-core</artifactId>
+  <groupId>com.snl.services.throttle</groupId>
+  <artifactId>throttle-util</artifactId>
   <version>0.0.1</version>
   <name>${project.artifactId}</name>
-  <description>SNL API Throttling Service</description>
+  <description>SNL API Throttling Service Utilities</description>
   <inceptionYear>2014</inceptionYear>
-  <licenses>
-  </licenses>
 
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
@@ -51,29 +49,33 @@
     	<version>1.0.2</version>
     </dependency>
     <dependency>
-    	<groupId>org.apache.spark</groupId>
-    	<artifactId>spark-core_2.10</artifactId>
-    	<version>1.2.0</version>
-    </dependency>
-	<dependency>
-	    <groupId>org.apache.spark</groupId>
-	    <artifactId>spark-streaming_2.10</artifactId>
-	    <version>1.2.0</version>
-	</dependency>    
-	<dependency>
-    	<groupId>org.apache.spark</groupId>
-    	<artifactId>spark-streaming-kafka_2.10</artifactId>
-    	<version>1.2.0</version>
+    	<groupId>com.typesafe.akka</groupId>
+    	<artifactId>akka-actor_2.10</artifactId>
+    	<version>2.3.4</version>
     </dependency>
     <dependency>
-    	<groupId>com.couchbase.client</groupId>
-    	<artifactId>java-client</artifactId>
-    	<version>2.0.2</version>
-    </dependency>
+    	<groupId>org.apache.kafka</groupId>
+    	<artifactId>kafka_2.10</artifactId>
+    	<version>0.8.1</version>
+		<exclusions>
+		    <exclusion>
+		        <groupId>com.sun.jmx</groupId>
+		        <artifactId>jmxri</artifactId>
+		    </exclusion>
+		    <exclusion>
+		        <groupId>com.sun.jdmk</groupId>
+		        <artifactId>jmxtools</artifactId>
+		    </exclusion>
+		    <exclusion>
+	            <groupId>javax.jms</groupId>
+	            <artifactId>jms</artifactId>
+		    </exclusion>
+		</exclusions>    
+	</dependency>
     <dependency>
-    	<groupId>io.reactivex</groupId>
-    	<artifactId>rxscala_2.10</artifactId>
-    	<version>0.23.0</version>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>slf4j-simple</artifactId>
+    	<version>1.7.7</version>
     </dependency>
   </dependencies>
 
@@ -133,10 +135,11 @@
 	    <configuration>
 	      <mainClass>akka.Main</mainClass>
 	      <arguments>
-	      	<arg>com.snl.services.throttle.Main</arg>
+	      	<arg>com.snl.services.throttle.util.Stress</arg>
 	      </arguments>
 	    </configuration>
 	  </plugin>     
+      
 	  <plugin>
 	    <groupId>org.apache.maven.plugins</groupId>
 		<artifactId>maven-shade-plugin</artifactId>
@@ -195,34 +198,4 @@
       
     </plugins>
   </build>
-  
-  <profiles>
-  
-  	<!-- The submit profile, marks spark as provided so it doesn't get included in the jar -->
-  	<profile>
-   	  <id>submit</id>
-   	  <dependencies>
-   	  	<dependency>
-	    	<groupId>org.apache.spark</groupId>
-	      	<artifactId>spark-core_2.10</artifactId>
-	    	<version>1.2.0</version>
-	    	<scope>provided</scope>
-	  	</dependency>
-		<dependency>
-		    <groupId>org.apache.spark</groupId>
-		    <artifactId>spark-streaming_2.10</artifactId>
-		    <version>1.2.0</version>
-	    	<scope>provided</scope>
-		</dependency>    
-		<dependency>
-	    	<groupId>org.apache.spark</groupId>
-	    	<artifactId>spark-streaming-kafka_2.10</artifactId>
-	    	<version>1.2.0</version>
-	    	<scope>provided</scope>
-	    </dependency>
-   	  </dependencies>
-  	</profile>
-  
-  </profiles>
-  
 </project>

@@ -3,20 +3,22 @@ package com.snl.services.throttle.util
 import java.util.{Properties,UUID}
 import scala.util.Random
 import scala.concurrent.duration.Duration
-
 import akka.actor._
 import kafka.producer._
 import grizzled.slf4j._
 import org.apache.log4j.BasicConfigurator
 
-import com.snl.services.throttle.Configured
-
 /**
  * A stress utility
  */
-class Stress extends Configured with Logging {
+class Stress extends Actor with Logging {
 
   import context._
+  
+  /**
+   * Pull in the configuration
+   */
+  private val config = Configuration(system)
    
   /**
    * The kafka producer
@@ -74,7 +76,7 @@ class Stress extends Configured with Logging {
     	  val time = System.currentTimeMillis()
     	  
     	  // send the message
-    	  producer.send( KeyedMessage( config.requestsTopic, modelId, "%s,%s".format( time.toString, hits.toString )))  
+    	  producer.send( KeyedMessage( config.requestsTopic, modelId, modelId, "%s,%s".format( time.toString, hits.toString )))  
     	  logger.info( "Generated request with for model %s with %d hits".format( modelId, hits ))
       }
       
