@@ -23,6 +23,7 @@ import com.snl.services.throttle.CouchbaseRequestStateWriter._
  * 2) handle errors in bucket upsert, fail agent and force restart?
  * 3) deal with issue of colons in incoming keys, flip?
  * 4) make it run on yarn
+ * 5) configure bucket to update frequently
  */
 class Main extends Configured with Logging {
 
