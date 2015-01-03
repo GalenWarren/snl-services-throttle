@@ -43,6 +43,8 @@
       <version>2.0.M6-SNAP8</version>
       <scope>test</scope>
     </dependency>
+    
+    <!-- library dependencies -->
     <dependency>
     	<groupId>org.apache.spark</groupId>
     	<artifactId>spark-core_2.10</artifactId>
@@ -64,9 +66,14 @@
     	<version>2.0.2</version>
     </dependency>
     <dependency>
-    	<groupId>org.json4s</groupId>
-    	<artifactId>json4s-jackson_2.10</artifactId>
-    	<version>3.2.11</version>
+    	<groupId>org.clapper</groupId>
+    	<artifactId>grizzled-slf4j_2.10</artifactId>
+    	<version>1.0.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>io.reactivex</groupId>
+    	<artifactId>rxscala_2.10</artifactId>
+    	<version>0.23.0</version>
     </dependency>
   </dependencies>
 
@@ -126,7 +133,7 @@
 	    <configuration>
 	      <mainClass>akka.Main</mainClass>
 	      <arguments>
-	      	<arg>net.shabeco.seer.Main</arg>
+	      	<arg>com.snl.services.throttle.Main</arg>
 	      </arguments>
 	    </configuration>
 	  </plugin>     

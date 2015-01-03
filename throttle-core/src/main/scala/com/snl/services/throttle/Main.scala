@@ -1,23 +1,31 @@
 package com.snl.services.throttle
 
+import scala.collection.mutable
+
 import akka.actor._
-import org.apache.spark._
+import kafka.serializer.{Decoder, StringDecoder}
+import org.apache.spark.{ Logging => _, _ }
+import org.apache.spark.SparkContext._
 import org.apache.spark.streaming._
+import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.storage._
 import org.apache.spark.streaming.kafka._
+import grizzled.slf4j._
+
+// use couchbase for state writing
+import com.snl.services.throttle.CouchbaseRequestStateWriter._
 
 /**
  * The main actor for the throttle application
+ * 
+ * TODOS:
+ * 1) figure out how to exclude spark from jar file
+ * 2) handle errors in bucket upsert, fail agent and force restart?
+ * 3) restrict window based on time of batch
+ * 4) put back expiry
  */
-class Main extends Actor {
+class Main extends Configured with Logging {
 
-  import context._
-  
-  /**
-   * Pull in the configuration
-   */
-  private val config = Configuration(system)
-  
   /**
    * The spark context
    */
@@ -57,11 +65,15 @@ class Main extends Actor {
 
     // the broadcast config, use this in any tasks where config needs to be accessed
 	val taskConfig = sparkContext.broadcast(config)
+	
+	// some accumulators
+	val totalHits = sparkContext.accumulator(0L, "Total hits" )
     
 	// create the input stream of requests from kafka. note that we have configured write-ahead to be enabled in the 
 	// spark configuration above, to achieve exactly once semantics, and have disabled replication for this stream
 	// per the recommendation in the docs, see https://spark.apache.org/docs/latest/streaming-programming-guide.html#fault-tolerance-semantics
-	val rawRequests = streamingContext.union(( 1 to config.requestsTopicReceiverCount).map( i => KafkaUtils.createStream( 
+	val rawRequests = streamingContext.union(( 1 to config.requestsTopicReceiverCount).map( i => 
+	  KafkaUtils.createStream[String,String,StringDecoder,StringDecoder]( 
 	    streamingContext,
 	    Map( 
 	        "zookeeper.connect"-> config.kafkaZookeeperConnect,
@@ -72,9 +84,46 @@ class Main extends Actor {
 	    ),
 	    StorageLevel.MEMORY_AND_DISK_SER)))
 	    
-	// parse the requests
-	val requests = rawRequests
-    
+	// parse the requests and throw out any that are too old, the result is a stream of (key,count)
+	val requests = rawRequests.map( r => {
+	  
+	  val parts = r._2.split(",")
+	  ( r._1, ( parts(0).toLong, parts(1).toLong))
+	  
+	}).transform( (rdd, time ) => {
+	  
+	  val threshold = time.milliseconds - taskConfig.value.requestsWindowInterval.toMillis
+	  rdd.filter( r => r._2._1 > threshold ).mapValues( _._2)
+	  
+	})
+	
+	// send through counts of zero in order to make sure that things get cleared out when requests stop, use the window size * 2 to make sure
+	// that we always get trailing zeros to force the totals to get reduced to zero
+	val zeroCounts = requests.groupByKeyAndWindow(
+	    config.requestsWindowInterval * 3,		// kgw why 3? 
+	    config.requestsSlideInterval).map( r => ( r._1, 0L ))
+
+	// count up the values over the trailing window
+	val counts = requests.union(zeroCounts).reduceByKeyAndWindow(
+	    (a: Long, b: Long) => a + b,
+	    config.requestsWindowInterval, 
+	    config.requestsSlideInterval, 
+	    config.requestsReducePartitionCount )
+	
+	// process each rdd ..
+	counts.foreachRDD( rdd => {
+
+	  // process each record
+	  rdd.foreach( r => {
+	    
+	    // write the state
+	    writeState( r._1, r._2, taskConfig.value )
+	    
+	  })
+	  
+	})
+	
+	
 	// kick off the processing
 	self ! Main.StartMessage
 	
