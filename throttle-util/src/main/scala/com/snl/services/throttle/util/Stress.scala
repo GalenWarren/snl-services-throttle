@@ -1,6 +1,7 @@
 package com.snl.services.throttle.util
 
 import java.util.{Properties,UUID}
+import java.net.URLEncoder
 import scala.util.Random
 import scala.concurrent.duration.Duration
 import akka.actor._
@@ -38,9 +39,14 @@ class Stress extends Actor with Logging {
   }
 
   /**
-   * Generate some random ids
+   * The keys to use
    */
-  private val modelIds = ( 1 to config.stressUtilKeyCount).map( i => UUID.randomUUID().toString())
+  private val keys = ( 1 to config.stressUtilKeyCount).map( i => "key%d".format( i ))
+  
+  /**
+   * The request groups to use
+   */
+  private val requestGroups = (1 to config.requestGroupCount).map( i => "requestGroup%d".format(i))
   
   /**
    * Random number generator
@@ -66,18 +72,20 @@ class Stress extends Actor with Logging {
   def receive = {
     
     case Stress.GenerateMessage => {
-      
-      for (modelId <- modelIds) {
+
+      for (key <- keys; requestGroup <- requestGroups) {
         
     	  // generate a value of hits between 1 and max
     	  val hits = random.nextInt( config.stressUtilMaxHits ) + 1
-    	  
-    	  // get the current time
+
+		  // use the current time
     	  val time = System.currentTimeMillis()
-    	  
-    	  // send the message
-    	  producer.send( KeyedMessage( config.requestsTopic, modelId, modelId, "%s,%s".format( time.toString, hits.toString )))  
-    	  logger.info( "Generated request with for model %s with %d hits".format( modelId, hits ))
+
+    	  // construct and send the message
+    	  val messageKey = List( key, requestGroup ).map( s => URLEncoder.encode(s, "utf8")).mkString(":")
+    	  val message = List( time.toString, hits.toString ).mkString(",")
+    	  producer.send( KeyedMessage( config.requestsTopic, messageKey, messageKey, message ))  
+    	  logger.info( "Generated request with for key %s and request group %s with %d hits".format( key, requestGroup, hits ))
       }
       
     }

@@ -1,5 +1,6 @@
 package com.snl.services.throttle
 
+import java.net.URLEncoder
 import scala.collection.JavaConversions._
 import scala.util.control._
 
@@ -52,13 +53,17 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
     // access the cluster
     val bucket = getBucket( config )
     
-    // generate the bucket key
-    val bucketKey = List( config.site, key ).mkString(":")
+    // generate the bucket key, this will look something like 12345:API:HQ, where the 12345:API
+    // is what came in as the key and we add the site here
+    val bucketKey = List( key, URLEncoder.encode(config.site, "utf8")).mkString(":")
     
     // either delete or upsert depending on the count. if we insert, give it an expiry of 2x the trailing interval
 	val observable : Observable[JsonDocument] = count match {
       case 0 => bucket.remove( bucketKey )
-      case _ => bucket.upsert(JsonDocument.create( bucketKey, JsonObject.empty().put( "count", count ), config.requestsWindowInterval.toSeconds ))
+      case _ => bucket.upsert(JsonDocument.create( 
+          bucketKey, 
+          config.requestsWindowInterval.toSeconds.toInt, 
+          JsonObject.empty().put( "count", count )))
     }
     
     // subscribe to results

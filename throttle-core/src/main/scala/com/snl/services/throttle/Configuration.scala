@@ -22,9 +22,15 @@ class Configuration ( config: Config ) extends Extension {
   val site = config.getString("snl.services.throttle.site")
   
   /**
-   * The spark master
+   * The spark master, this is optional as in production it is usually supplied via spark-submit
    */
-  val sparkMaster = config.getString("snl.services.throttle.spark.master")
+  val sparkMaster : Option[String] = {
+    val path = "snl.services.throttle.spark.master"
+    config.hasPath(path) match {
+      case true => Some(config.getString(path))
+      case false => None
+    }
+  } 
   
   /**
    * The checkpoint location

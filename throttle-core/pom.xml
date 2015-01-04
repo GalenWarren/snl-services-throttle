@@ -132,6 +132,12 @@
 	    </executions>
 	    <configuration>
 	      <mainClass>akka.Main</mainClass>
+	      <systemProperties>
+	      	<systemProperty>
+	      	  <key>snl.services.throttle.spark.master</key>
+	      	  <value>local[2]</value>
+	      	</systemProperty>
+	      </systemProperties>
 	      <arguments>
 	      	<arg>com.snl.services.throttle.Main</arg>
 	      </arguments>

@@ -1,6 +1,7 @@
 package com.snl.services.throttle
 
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 import akka.actor._
 import kafka.serializer.{Decoder, StringDecoder}
@@ -19,10 +20,11 @@ import com.snl.services.throttle.CouchbaseRequestStateWriter._
  * The main actor for the throttle application
  * 
  * TODOS:
- * 6) figure out how to use application.conf
- * 4) make it run on yarn
- * 2) handle errors in bucket upsert, fail agent and force restart?
- * 5) configure bucket to update frequently
+ * 1) figure out how to use application.conf
+ * 2) make it run on yarn
+ * 3) handle errors in bucket upsert, fail agent and force restart?
+ * 4) configure bucket to update frequently
+ * 5) in web service, accept multiple requestGroup,hits pairs
  */
 class Main extends Actor with Logging {
 
@@ -41,9 +43,14 @@ class Main extends Actor with Logging {
     // the spark configuration
     val conf = new SparkConf()
       .setAppName(config.appName)
-      .setMaster(config.sparkMaster)
       .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.streaming.receiver.writeAheadLogs.enable", "true")
+      
+    // if supplied, set the spark master
+    config.sparkMaster match {
+      case Some(master) => conf.setMaster(master)
+      case None => {}
+    }
       
     // register classes that will need to be serialized
     conf.registerKryoClasses( Array(classOf[Configuration]))
@@ -91,11 +98,16 @@ class Main extends Actor with Logging {
 	    ),
 	    StorageLevel.MEMORY_AND_DISK_SER)))
 	    
-	// parse the requests and throw out any that are too old, the result is a stream of (key,count)
+	// parse the requests and throw out any that are too old, e.g. that have aged out of the window interval 
+	// the incoming request is is key, value where the key is the trackingKey and the value is (time, hits)
+	// the result is a DStream of ( userApiKey, hits )
 	val requests = rawRequests.map( r => {
 	  
-	  val parts = r._2.split(",")
-	  ( r._1, ( parts(0).toLong, parts(1).toLong))
+	  val key = r._1
+ 	  val parts = r._2.split(",")
+	  val time = parts(0).toLong
+	  val hits = parts(1).toLong
+	  ( key, ( time, hits ))
 	  
 	}).transform( (rdd, time ) => {
 	  
@@ -107,7 +119,7 @@ class Main extends Actor with Logging {
 	// send through counts of zero in order to make sure that things get cleared out when requests stop, use the window size * 2 to make sure
 	// that we always get trailing zeros to force the totals to get reduced to zero
 	val zeroCounts = requests.groupByKeyAndWindow(
-	    config.requestsWindowInterval * 3,		// kgw why 3? 
+	    config.requestsWindowInterval * 2,						// kgw try window interval + slide interval? 
 	    config.requestsSlideInterval).map( r => ( r._1, 0L ))
 
 	// count up the values over the trailing window
