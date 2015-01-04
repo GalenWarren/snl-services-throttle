@@ -1,4 +1,7 @@
- #!/bin/sh
+#!/bin/sh
+
+# default properties
+PROPS=''
 
 # parse the options
 OPTS=`getopt -a -l keyCount:,period:,maxHits: -- "$0" "$@"`
@@ -7,11 +10,8 @@ then
   exit 1
 fi
 
-# replace the args
+# replace the args and build up properties
 eval set -- "$OPTS"
-
-# build up the properties
-PROPS=''
 while true; do
   case "$1" in 
     --keyCount) PROPS="$PROPS -Dsnl.services.throttle.util.stress.keyCount=$2"; shift; shift;;
