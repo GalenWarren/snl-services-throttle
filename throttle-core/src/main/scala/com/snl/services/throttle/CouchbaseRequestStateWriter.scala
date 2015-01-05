@@ -19,25 +19,33 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
   /**
    * The bucket
    */
-  private var bucketOption: Option[AsyncBucket] = None
+  private var bucketOption: Option[Bucket] = None
   
   /**
    * The couchbase client object
    */
-  private def getBucket( config: Configuration ) : AsyncBucket = synchronized {
+  private def getBucket( config: Configuration ) : Bucket = {
     
     bucketOption match {
       
       case Some(b) => b
-      case None => {
-        
-        // create the cluster
-        val cluster = CouchbaseCluster.create( config.couchbaseNodes.split(",") :_*)
-        
-        // create the bucket
-        val bucket = cluster.openBucket( config.requestsBucket).async()
-        bucketOption = Some(bucket)
-        bucket
+      case None => synchronized {
+
+        bucketOption match {
+          case Some(b) => b
+          case None => {
+
+	        // create the cluster
+	        val cluster = CouchbaseCluster.create( config.couchbaseNodes.split(",") :_*)
+	        
+	        // create the bucket
+	        val bucket = cluster.openBucket( config.requestsBucket)
+	        bucketOption = Some(bucket)
+	        bucket
+            
+          }
+          
+        }
         
       }
       
@@ -58,20 +66,13 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
     val bucketKey = List( key, URLEncoder.encode(config.site, "utf8")).mkString(":")
     
     // either delete or upsert depending on the count. if we insert, give it an expiry of 2x the trailing interval
-	val observable : Observable[JsonDocument] = count match {
+	count match {
       case 0 => bucket.remove( bucketKey )
       case _ => bucket.upsert(JsonDocument.create( 
           bucketKey, 
           config.requestsWindowInterval.toSeconds.toInt, 
           JsonObject.empty().put( "count", count )))
     }
-    
-    // subscribe to results
-    observable.subscribe( new Observer[JsonDocument] {
-      override def onError( t: Throwable ) {
-        logger.error( "Failed to store document for key %s: %s".format( key, t.getMessage()))
-      }
-    })
     
   }
   

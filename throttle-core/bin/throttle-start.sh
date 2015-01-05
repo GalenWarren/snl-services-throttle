@@ -16,11 +16,12 @@ fi
 eval set -- "$OPTS"
 while true; do
 	case "$1" in 
-    	--client) MODE="clientx"; shift;;
+    	--client) MODE="client"; shift;;
     	--jar) JAR=$2; shift; shift;; 
     	--) shift; break;;
   	esac
 done
 
 # execute the command
+echo "Submitting to YARN in $MODE mode ..."
 $SPARK_HOME/bin/spark-submit --class akka.Main --master yarn-$MODE $JAR com.snl.services.throttle.Main

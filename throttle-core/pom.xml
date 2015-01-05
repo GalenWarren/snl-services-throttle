@@ -204,10 +204,16 @@
   
   <profiles>
   
-  	<!-- The submit profile, marks spark as provided so it doesn't get included in the jar -->
+  	<!-- The submit profile, marks hadoop and spark as provided so it doesn't get included in the jar -->
   	<profile>
    	  <id>submit</id>
    	  <dependencies>
+	    <dependency>
+	    	<groupId>org.apache.hadoop</groupId>
+	    	<artifactId>hadoop-client</artifactId>
+	    	<version>2.6.0</version>
+	    	<scope>provided</scope>
+	    </dependency>
    	  	<dependency>
 	    	<groupId>org.apache.spark</groupId>
 	      	<artifactId>spark-core_2.10</artifactId>
@@ -220,12 +226,6 @@
 		    <version>1.2.0</version>
 	    	<scope>provided</scope>
 		</dependency>    
-		<dependency>
-	    	<groupId>org.apache.spark</groupId>
-	    	<artifactId>spark-streaming-kafka_2.10</artifactId>
-	    	<version>1.2.0</version>
-	    	<scope>provided</scope>
-	    </dependency>
    	  </dependencies>
   	</profile>
   

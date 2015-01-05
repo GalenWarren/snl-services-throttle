@@ -82,7 +82,7 @@ class Stress extends Actor with Logging {
     	  val time = System.currentTimeMillis()
 
     	  // construct and send the message
-    	  val messageKey = List( key, requestGroup ).map( s => URLEncoder.encode(s, "utf8")).mkString(":")
+    	  val messageKey = List( requestGroup, key ).map( s => URLEncoder.encode(s, "utf8")).mkString(":")
     	  val message = List( time.toString, hits.toString ).mkString(",")
     	  producer.send( KeyedMessage( config.requestsTopic, messageKey, messageKey, message ))  
     	  logger.info( "Generated request with for key %s and request group %s with %d hits".format( key, requestGroup, hits ))

@@ -87,6 +87,16 @@ class Configuration ( config: Config ) extends Extension {
    */
   val couchbaseNodes = config.getString("snl.services.throttle.couchbase.nodes")
   
+  /**
+   * The max number of times we can fail in the retry time interval
+   */
+  val retryMaxRetries = config.getInt( "snl.services.throttle.retry.maxRetries")
+  
+  /**
+   * The retry time interval
+   */
+  val retryTimeInterval = Configuration.getDuration( config, "snl.services.throttle.retry.timeInterval")
+  
 }
 
 object Configuration extends ExtensionId[Configuration] with ExtensionIdProvider {
