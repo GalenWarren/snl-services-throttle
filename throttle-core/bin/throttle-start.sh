@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # vars
-HOSTNAME=$(hostname)
 MODE="cluster"
 JAR="lib/throttle-core-0.0.1.jar"
 

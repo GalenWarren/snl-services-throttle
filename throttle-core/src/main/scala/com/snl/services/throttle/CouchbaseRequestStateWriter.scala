@@ -57,7 +57,7 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
    * Writes out the state
    */
   def writeState( key: String, count: Long, config: Configuration ) {
-    
+
     // access the cluster
     val bucket = getBucket( config )
     

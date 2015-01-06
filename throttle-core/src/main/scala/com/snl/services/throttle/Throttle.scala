@@ -25,9 +25,8 @@ import com.snl.services.throttle.CouchbaseRequestStateWriter._
  * 2) make it run on yarn
  * 	a) at all
  *  b) support override of kafka/couchbase connect strings
- * 
  * 3) handle errors in bucket upsert, fail agent and force restart?
- * 4) configure bucket to update frequently
+ * 4) configure bucket to update frequently or adjust the stale settings on neg responses?
  * 5) in web service, accept multiple requestGroup,hits pairs (document how to create view and configure properly)
  */
 class Throttle extends Actor with Logging {
@@ -47,8 +46,10 @@ class Throttle extends Actor with Logging {
     // the spark configuration
     val conf = new SparkConf()
       .setAppName(config.appName)
-      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.streaming.receiver.writeAheadLogs.enable", "true")
+      //.set("spark.yarn.user.classpath.first", "true")
+      //.set("spark.files.userClassPathFirst", "true")
       
     // if supplied, set the spark master
     config.sparkMaster match {
@@ -57,7 +58,7 @@ class Throttle extends Actor with Logging {
     }
       
     // register classes that will need to be serialized
-    conf.registerKryoClasses( Array(classOf[Configuration]))
+    //conf.registerKryoClasses( Array(classOf[Configuration]))
     	
     // create the spark context
     new SparkContext( conf )
