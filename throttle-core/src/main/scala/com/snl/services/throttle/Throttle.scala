@@ -46,10 +46,8 @@ class Throttle extends Actor with Logging {
     // the spark configuration
     val conf = new SparkConf()
       .setAppName(config.appName)
-      //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .set("spark.streaming.receiver.writeAheadLogs.enable", "true")
-      //.set("spark.yarn.user.classpath.first", "true")
-      //.set("spark.files.userClassPathFirst", "true")
       
     // if supplied, set the spark master
     config.sparkMaster match {
@@ -58,7 +56,7 @@ class Throttle extends Actor with Logging {
     }
       
     // register classes that will need to be serialized
-    //conf.registerKryoClasses( Array(classOf[Configuration]))
+    conf.registerKryoClasses( Array(classOf[Configuration]))
     	
     // create the spark context
     new SparkContext( conf )
