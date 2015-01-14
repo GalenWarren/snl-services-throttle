@@ -103,7 +103,7 @@ class Throttle extends Actor with Logging {
 	    
 	// parse the requests and throw out any that are too old, e.g. that have aged out of the window interval 
 	// the incoming request is is key, value where the key is the trackingKey and the value is (time, hits)
-	// the result is a DStream of ( userApiKey, hits )
+	// the result is a DStream of ( key (time, hits))
 	val requests = rawRequests.map( r => {
 	  
 	  val key = r._1

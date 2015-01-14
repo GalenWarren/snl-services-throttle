@@ -24,28 +24,20 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
   /**
    * The couchbase client object
    */
-  private def getBucket( config: Configuration ) : Bucket = {
+  private def getBucket( config: Configuration ) : Bucket = synchronized {
     
     bucketOption match {
       
       case Some(b) => b
-      case None => synchronized {
+      case None => {
 
-        bucketOption match {
-          case Some(b) => b
-          case None => {
-
-	        // create the cluster
-	        val cluster = CouchbaseCluster.create( config.couchbaseNodes.split(",") :_*)
-	        
-	        // create the bucket
-	        val bucket = cluster.openBucket( config.requestsBucket)
-	        bucketOption = Some(bucket)
-	        bucket
-            
-          }
-          
-        }
+        // create the cluster
+        val cluster = CouchbaseCluster.create( config.couchbaseNodes.split(",") :_*)
+        
+        // create the bucket
+        val bucket = cluster.openBucket( config.requestsBucket)
+        bucketOption = Some(bucket)
+        bucket
         
       }
       
@@ -65,7 +57,9 @@ object CouchbaseRequestStateWriter extends RequestStateWriter with Logging {
     // is what came in as the key and we add the site here
     val bucketKey = List( key, URLEncoder.encode(config.site, "utf8")).mkString(":")
     
-    // either delete or upsert depending on the count. if we insert, give it an expiry of 2x the trailing interval
+    // either delete or upsert depending on the count. if we insert, give it an expiry that matches the window,
+    // this means that if all else fails, the documents will be removed from couchbase when the window passes 
+    // (even if not updated from this application)
 	count match {
       case 0 => bucket.remove( bucketKey )
       case _ => bucket.upsert(JsonDocument.create( 
